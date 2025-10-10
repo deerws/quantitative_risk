@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import warnings
+import os
 warnings.filterwarnings('ignore')
 
 class DataCollector:
@@ -25,7 +26,7 @@ class DataCollector:
             for ticker in ticker_list:
                 try:
                     # Download dos dados
-                    stock = yf.download(ticker, period=period, auto_adjust=auto_adjust)
+                    stock = yf.download(ticker, period=period, auto_adjust=auto_adjust, progress=False)
                     
                     if not stock.empty:
                         # Padronizar colunas
@@ -65,8 +66,6 @@ class DataCollector:
     
     def save_data(self, prices_df, returns_simple, returns_log, prefix=""):
         """Salva dados em formato parquet"""
-        import os
-        
         # Criar diretório se não existir
         os.makedirs('data/processed', exist_ok=True)
         
@@ -97,6 +96,12 @@ def main():
     print(f"📊 Preços: {prices.shape}")
     print(f"📈 Retornos simples: {returns_simple.shape}")
     print(f"📈 Retornos log: {returns_log.shape}")
+    
+    # Mostrar preview
+    print("\n📋 Preview dos preços:")
+    print(prices.head())
+    print("\n📋 Preview dos retornos:")
+    print(returns_simple.head())
 
 if __name__ == "__main__":
     main()
