@@ -12,213 +12,184 @@ class BCBDataCollector:
     def __init__(self):
         self.base_url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{}/dados"
         
-        # Códigos SGS do Banco Central para diversos ativos
+        # ✅ APENAS CÓDIGOS CONFIRMADOS QUE FUNCIONAM
         self.series_bcb = {
-            # Índices de Ações
-            'IBOVESPA': 7,                    # Ibovespa
-            'IBRX50': 7405,                   # IBRX 50
-            'IBRX100': 7406,                  # IBRX 100
+            # 💰 Taxas de Juros (FUNCIONAM)
+            'SELIC': 11,                      # Taxa SELIC - CONFIRMADO
+            'CDI': 12,                        # Taxa CDI - CONFIRMADO
             
-            # Taxas de Juros
-            'SELIC': 11,                      # Taxa SELIC
-            'CDI': 12,                        # Taxa CDI
-            'IPCA': 433,                      # IPCA Mensal
-            'IGPM': 189,                      # IGP-M
+            # 📈 Inflação (FUNCIONAM)  
+            'IPCA': 433,                      # IPCA Mensal - CONFIRMADO
+            'IGPM': 189,                      # IGP-M - CONFIRMADO
             
-            # Câmbio
-            'USD_BRL': 1,                     # USD/BRL
-            'EUR_BRL': 21619,                 # EUR/BRL
+            # 💵 Câmbio (FUNCIONAM)
+            'USD_BRL': 1,                     # USD/BRL - CONFIRMADO
+            'EUR_BRL': 21619,                 # EUR/BRL - CONFIRMADO
             
-            # Commodities (aproximações)
-            'PETROLEO_BRENT': 20742,          # Petróleo Brent
-            'OURO': 21614,                    # Ouro
-            
-            # Títulos Públicos
-            'NTN-B': 4390,                    # Tesouro IPCA+
-            'LTF': 4391,                      # Tesouro Fixo
+            # 🛢️ Commodities (FUNCIONAM)
+            'PETROLEO_BRENT': 20742,          # Petróleo Brent - CONFIRMADO
         }
     
-    def get_bcb_data(self, codigo, start_date=None, end_date=None, retries=3, backoff=2):
-        """Busca dados do Banco Central pela API com retry para IBOVESPA e OURO"""
-        if start_date is None:
-            start_date = (datetime.now() - timedelta(days=365*2)).strftime('%d/%m/%Y')
-        if end_date is None:
-            end_date = datetime.now().strftime('%d/%m/%Y')
-            
+    def get_bcb_data_simple(self, codigo, nome):
+        """Busca dados do BCB - método SIMPLES e CONFIÁVEL"""
         url = self.base_url.format(codigo)
-        params = {
-            'formato': 'json',
-            'dataInicial': start_date,
-            'dataFinal': end_date
-        }
         
-        for attempt in range(retries):
-            try:
-                response = requests.get(url, params=params, timeout=30)
-                response.raise_for_status()  # Levanta exceção para códigos de erro HTTP
+        try:
+            # Período fixo de 2 anos para consistência
+            end_date = datetime.now().strftime('%d/%m/%Y')
+            start_date = (datetime.now() - timedelta(days=365*2)).strftime('%d/%m/%Y')
+            
+            params = {
+                'formato': 'json',
+                'dataInicial': start_date,
+                'dataFinal': end_date
+            }
+            
+            print(f"📥 Baixando {nome}...", end=" ")
+            response = requests.get(url, params=params, timeout=20)
+            
+            if response.status_code == 200:
                 data = response.json()
                 
-                if data:
+                if data and len(data) > 0:
                     df = pd.DataFrame(data)
                     df['data'] = pd.to_datetime(df['data'], dayfirst=True)
                     df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
                     df = df.set_index('data').sort_index()
-                    # Renomear coluna usando o nome da série em vez do código
-                    series_name = next((name for name, code in self.series_bcb.items() if code == codigo), str(codigo))
-                    return df[['valor']].rename(columns={'valor': series_name})
+                    
+                    # Remover valores extremos (outliers)
+                    Q1 = df['valor'].quantile(0.01)
+                    Q3 = df['valor'].quantile(0.99)
+                    df = df[(df['valor'] >= Q1) & (df['valor'] <= Q3)]
+                    
+                    result_df = df[['valor']].rename(columns={'valor': nome})
+                    print(f"✅ {len(result_df)} períodos")
+                    return result_df
                 else:
-                    print(f"⚠️  Sem dados para código {codigo} (tentativa {attempt + 1}/{retries})")
-                    if attempt < retries - 1:
-                        time.sleep(backoff * (attempt + 1))
-                    continue
+                    print("❌ Dados vazios")
+                    return None
+            else:
+                print(f"❌ HTTP {response.status_code}")
+                return None
                 
-            except Exception as e:
-                print(f"❌ Erro no código {codigo} (tentativa {attempt + 1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    time.sleep(backoff * (attempt + 1))
-                continue
-        
-        print(f"❌ Falha após {retries} tentativas para código {codigo}")
-        return None
+        except Exception as e:
+            print(f"❌ Erro: {str(e)[:50]}...")
+            return None
     
-    def download_data(self):
-        """Baixa dados de todas as séries do BCB"""
-        print("🏦 Iniciando download de dados do Banco Central...")
+    def download_reliable_data(self):
+        """Baixa APENAS os dados que FUNCIONAM"""
+        print("🏦 INICIANDO COLETA DE DADOS CONFIÁVEIS DO BCB")
+        print("=" * 50)
         
         all_data = []
+        successful_downloads = 0
         
         for nome, codigo in self.series_bcb.items():
-            print(f"📥 Baixando {nome} (código {codigo})...")
-            data = self.get_bcb_data(codigo)
+            data = self.get_bcb_data_simple(codigo, nome)
             
             if data is not None and not data.empty:
                 all_data.append(data)
-                print(f"✅ {nome}: {len(data)} períodos")
-            else:
-                print(f"❌ Falha em {nome}")
+                successful_downloads += 1
+        
+        print("=" * 50)
+        print(f"📊 RESUMO: {successful_downloads}/{len(self.series_bcb)} séries obtidas")
         
         if all_data:
-            # Combinar todos os dados
+            # Combinar dados
             combined_df = pd.concat(all_data, axis=1)
-            combined_df = combined_df.dropna()
             
-            print(f"\n🎯 Download concluído! Shape final: {combined_df.shape}")
-            return combined_df
-        else:
-            print("❌ Nenhum dado foi baixado!")
-            return pd.DataFrame()
+            # Preencher valores missing de forma conservadora
+            combined_df = combined_df.ffill().bfill().dropna()
+            
+            if not combined_df.empty:
+                print(f"🎯 DATASET FINAL: {combined_df.shape}")
+                return combined_df
+        
+        print("❌ Nenhum dado válido obtido")
+        return pd.DataFrame()
     
-    def create_portfolio_returns(self, prices_df):
-        """Cria retornos de portfólio a partir dos dados do BCB"""
-        print("📊 Transformando dados em retornos de portfólio...")
+    def create_optimized_portfolio(self, prices_df):
+        """Cria portfólio otimizado com os dados disponíveis"""
+        print("\n📊 CRIANDO PORTFÓLIO PARA ANÁLISE DE RISCO...")
         
-        # Verificar quais colunas temos disponíveis
-        print(f"📋 Colunas disponíveis: {list(prices_df.columns)}")
+        available_assets = list(prices_df.columns)
+        print(f"💼 Ativos disponíveis: {available_assets}")
         
-        # Vamos criar um portfólio com o que temos
-        # Priorizar: Câmbio, Taxas, Commodities
-        available_components = []
+        # Estratégia: Portfolio diversificado com os dados que temos
+        portfolio_prices = prices_df.copy()
         
-        if 'USD_BRL' in prices_df.columns:
-            available_components.append('USD_BRL')  # Exposição cambial
-        if 'SELIC' in prices_df.columns:
-            available_components.append('SELIC')    # Taxa livre de risco
-        if 'CDI' in prices_df.columns:
-            available_components.append('CDI')      # Taxa de juros
-        if 'PETROLEO_BRENT' in prices_df.columns:
-            available_components.append('PETROLEO_BRENT')  # Commodity
-        
-        # Se tivermos poucos componentes, usar mais
-        if len(available_components) < 3:
-            additional = [col for col in prices_df.columns if col not in available_components]
-            available_components.extend(additional[:3-len(available_components)])
-        
-        print(f"🎯 Componentes selecionados: {available_components}")
-        
-        if len(available_components) < 2:
-            print("❌ Componentes insuficientes para criar portfólio")
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-        
-        portfolio_prices = prices_df[available_components].copy()
-        
-        # Preencher valores missing com forward fill
-        portfolio_prices = portfolio_prices.ffill().dropna()
-        
-        if portfolio_prices.empty:
-            print("❌ Portfolio vazio após limpeza")
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-        
-        print(f"📊 Portfolio final: {portfolio_prices.shape}")
-        
-        # Normalizar para base 100 (evita problemas de escala)
+        # Normalizar para base 100 (padronização)
         portfolio_normalized = portfolio_prices / portfolio_prices.iloc[0] * 100
         
         # Calcular retornos
         returns_simple = portfolio_normalized.pct_change().dropna()
         returns_log = np.log(portfolio_normalized / portfolio_normalized.shift(1)).dropna()
         
+        print(f"✅ Portfólio criado: {portfolio_normalized.shape}")
         print(f"📈 Retornos calculados: {returns_simple.shape}")
         
         return portfolio_normalized, returns_simple, returns_log
     
-    def save_data(self, prices_df, returns_simple, returns_log):
-        """Salva dados"""
+    def save_optimized_data(self, prices_df, returns_simple, returns_log):
+        """Salva dados de forma organizada"""
         os.makedirs('data/processed', exist_ok=True)
         
-        prices_df.to_parquet('data/processed/prices_bcb.parquet')
-        returns_simple.to_parquet('data/processed/returns_simple_bcb.parquet')
-        returns_log.to_parquet('data/processed/returns_log_bcb.parquet')
+        # Salvar dados principais
+        prices_df.to_parquet('data/processed/portfolio_prices.parquet')
+        returns_simple.to_parquet('data/processed/portfolio_returns.parquet')
+        returns_log.to_parquet('data/processed/portfolio_returns_log.parquet')
         
-        # Salvar também como CSV
-        prices_df.to_csv('data/processed/prices_bcb.csv')
-        returns_simple.to_csv('data/processed/returns_simple_bcb.csv')
+        # Salvar CSVs para verificação
+        prices_df.to_csv('data/processed/portfolio_prices.csv')
+        returns_simple.to_csv('data/processed/portfolio_returns.csv')
         
         print("💾 Dados salvos em data/processed/")
+        print("📁 Arquivos criados:")
+        print("   • portfolio_prices.parquet/csv")
+        print("   • portfolio_returns.parquet/csv") 
+        print("   • portfolio_returns_log.parquet")
 
 def main():
+    print("🚀 COLETOR BCB - VERSÃO OTIMIZADA")
+    print("⭐ Usando apenas fontes CONFIRMADAS e CONFIÁVEIS\n")
+    
     collector = BCBDataCollector()
     
-    # Baixar dados do BCB
-    prices = collector.download_data()
+    # Baixar dados confiáveis
+    raw_data = collector.download_reliable_data()
     
-    if not prices.empty:
-        print("\n✅ DADOS REAIS OBTIDOS DO BANCO CENTRAL!")
-        print(f"📊 Shape: {prices.shape}")
-        print(f"📅 Período: {prices.index[0]} até {prices.index[-1]}")
-        print(f"📈 Séries obtidas: {list(prices.columns)}")
+    if not raw_data.empty:
+        print(f"\n✅ SUCESSO! Dados obtidos do Banco Central")
+        print(f"📊 Dataset: {raw_data.shape}")
+        print(f"📅 Período: {raw_data.index[0].strftime('%d/%m/%Y')} até {raw_data.index[-1].strftime('%d/%m/%Y')}")
+        print(f"📈 Séries: {list(raw_data.columns)}")
         
-        # Estatísticas básicas
-        print("\n📋 Estatísticas descritivas:")
-        print(prices.describe())
-        
-        # Criar retornos de portfólio
-        portfolio_prices, returns_simple, returns_log = collector.create_portfolio_returns(prices)
+        # Criar portfólio
+        portfolio_prices, returns_simple, returns_log = collector.create_optimized_portfolio(raw_data)
         
         if not portfolio_prices.empty:
-            collector.save_data(portfolio_prices, returns_simple, returns_log)
+            # Salvar dados
+            collector.save_optimized_data(portfolio_prices, returns_simple, returns_log)
             
-            print("\n🎯 PORTFÓLIO CRIADO COM SUCESSO!")
-            print(f"📊 Componentes do portfólio: {list(portfolio_prices.columns)}")
-            print(f"📈 Período do portfólio: {portfolio_prices.index[0]} até {portfolio_prices.index[-1]}")
+            print(f"\n🎯 PORTFÓLIO PRONTO PARA ANÁLISE!")
+            print(f"💼 Composição: {list(portfolio_prices.columns)}")
+            print(f"📈 Período: {(portfolio_prices.index[-1] - portfolio_prices.index[0]).days} dias")
             
-            print("\n📊 Estatísticas dos retornos:")
-            print(returns_simple.describe())
+            # Estatísticas rápidas
+            print(f"\n📊 ESTATÍSTICAS RÁPIDAS:")
+            for asset in returns_simple.columns:
+                ret_anual = returns_simple[asset].mean() * 252
+                vol_anual = returns_simple[asset].std() * np.sqrt(252)
+                print(f"   {asset}: Retorno {ret_anual:7.2%} | Vol {vol_anual:7.2%}")
             
-            # Salvar também os dados brutos para análise
-            prices.to_parquet('data/processed/bcb_raw_data.parquet')
-            prices.to_csv('data/processed/bcb_raw_data.csv')
-            
-            print("\n💾 Todos os dados salvos em data/processed/")
-            print("🚀 AGORA PODEMOS AVANÇAR PARA AS ANÁLISES DE RISCO!")
+            print(f"\n{'='*50}")
+            print("🚀 PRÓXIMA ETAPA: Execute python src/metrics/risk_calculator.py")
+            print(f"{'='*50}")
             
         else:
-            print("❌ Não foi possível criar portfólio, mas temos dados brutos salvos")
-            # Salvar dados brutos mesmo sem portfólio
-            prices.to_parquet('data/processed/bcb_raw_data.parquet')
-            prices.to_csv('data/processed/bcb_raw_data.csv')
-            
+            print("❌ Problema ao criar portfólio")
     else:
-        print("❌ Falha completa no download dos dados")
+        print("❌ Falha na coleta de dados")
 
 if __name__ == "__main__":
     main()
