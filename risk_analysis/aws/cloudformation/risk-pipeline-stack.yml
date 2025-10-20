@@ -1,0 +1,44 @@
+Parameters:
+  S3BucketName:
+    Type: String
+    Default: ""
+  S3Key:
+    Type: String
+    Default: ""
+
+Resources:
+  ProjetoARiscoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ProjetoA_Risco_Function
+      Runtime: python3.9
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        # Se S3 parameters foram fornecidos, usa S3, senão usa inline
+        !If 
+          - UseS3
+          - S3Bucket: !Ref S3BucketName
+            S3Key: !Ref S3Key
+          - ZipFile: |
+              import json
+              def lambda_handler(event, context):
+                  return {"statusCode": 200, "body": "Placeholder"}
+      Timeout: 300
+      MemorySize: 512
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+Conditions:
+  UseS3: !And [!Not [!Equals [!Ref S3BucketName, ""]], !Not [!Equals [!Ref S3Key, ""]]]
