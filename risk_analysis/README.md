@@ -1,3 +1,4 @@
+transcreva para ingles esse repositorio
 # 🧠 Projeto A — Análise Quantitativa de Risco de Portfólio
 
 ---
