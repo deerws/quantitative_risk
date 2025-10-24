@@ -10,7 +10,6 @@ import warnings
 import sys
 import os
 from datetime import datetime, timedelta
-import base64
 
 # Adicionar o src ao path para importar nossos módulos
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -25,136 +24,33 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Função para carregar imagem como base64
-def get_image_as_base64(path):
-    with open(path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode()
-
-# CSS personalizado - Estilo Wall Street Journal
+# CSS personalizado
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
-    
-    * {
-        font-family: 'EB Garamond', serif;
-    }
-    
-    .main {
-        background-color: #0e1117;
-        color: #f0f2f6;
-    }
-    
     .main-header {
-        font-size: 2.8rem;
-        color: #d4af37;
+        font-size: 3rem;
+        color: #1f77b4;
         text-align: center;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-        letter-spacing: -0.5px;
-        font-family: 'EB Garamond', serif;
+        margin-bottom: 2rem;
     }
-    
-    .section-header {
-        font-size: 1.8rem;
-        color: #d4af37;
-        border-bottom: 1px solid #d4af37;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1.5rem;
-        font-weight: 500;
-        font-family: 'EB Garamond', serif;
-    }
-    
-    .sidebar-header {
-        font-family: 'EB Garamond', serif;
-        font-weight: 600;
-        color: #d4af37;
-    }
-    
     .metric-card {
-        background-color: #1e2130;
-        padding: 1.2rem;
-        border-radius: 5px;
-        border-left: 4px solid #d4af37;
-        margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid #1f77b4;
     }
-    
     .simulation-card {
-        background-color: #1e2130;
+        background-color: #fff;
         padding: 1.5rem;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        margin-bottom: 1.5rem;
-        border: 1px solid #333;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: #1e2130;
-        border-radius: 5px 5px 0px 0px;
-        gap: 1px;
-        padding-top: 15px;
-        padding-bottom: 15px;
-        font-weight: 500;
-        font-family: 'EB Garamond', serif;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: #26293f;
-        border-bottom: 3px solid #d4af37;
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg, .css-1lcbmhc {
-        background-color: #1e2130;
-    }
-    
-    /* Logo container */
-    .logo-container {
-        text-align: center;
-        padding: 1.5rem 0;
-        border-bottom: 1px solid #333;
-        margin-bottom: 1.5rem;
-    }
-    
-    .logo-img {
-        max-width: 200px;
-        margin: 0 auto;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        font-family: 'EB Garamond', serif !important;
-    }
-    
-    .stSidebar h1, .stSidebar h2, .stSidebar h3 {
-        font-family: 'EB Garamond', serif !important;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Logo do BACEN (substituindo pela imagem)
-try:
-    logo_base64 = get_image_as_base64("bacen_logo.png")
-    st.sidebar.markdown(f"""
-    <div class="logo-container">
-        <img src="data:image/png;base64,{logo_base64}" class="logo-img">
-    </div>
-    """, unsafe_allow_html=True)
-except:
-    st.sidebar.markdown("""
-    <div class="logo-container">
-        <div style="color: #d4af37; font-size: 1.5rem; font-weight: 700;">BANCO CENTRAL DO BRASIL</div>
-        <div style="color: #888; font-size: 1rem; margin-top: 0.5rem;">BACEN</div>
-    </div>
-    """, unsafe_allow_html=True)
-
 # Título principal
-st.markdown('<h1 class="main-header">Quantum Risk Analytics</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🧠 Quantum Risk Analytics</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
 # Função para carregar dados
@@ -171,7 +67,7 @@ def load_data():
             prices = pd.read_csv('data/processed/macro_portfolio_prices.csv', index_col=0, parse_dates=True)
             return returns, prices
         except Exception as e:
-            st.error(f"Erro ao carregar dados: {e}")
+            st.error(f"❌ Erro ao carregar dados: {e}")
             return None, None
 
 # Carregar dados
@@ -179,7 +75,7 @@ returns, prices = load_data()
 
 if returns is None or prices is None:
     st.error("""
-    **Dados não encontrados!**
+    ⚠️ **Dados não encontrados!**
     
     Execute primeiro o pipeline completo:
     ```bash
@@ -190,10 +86,10 @@ if returns is None or prices is None:
     st.stop()
 
 # Sidebar para controles
-st.sidebar.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
+st.sidebar.title("⚙️ Painel de Controle")
 
 # Seleção de ativos
-st.sidebar.markdown('<div class="sidebar-header">Configuração do Portfólio</div>', unsafe_allow_html=True)
+st.sidebar.subheader("📈 Configuração do Portfólio")
 selected_assets = st.sidebar.multiselect(
     "Selecione os ativos:",
     options=returns.columns.tolist(),
@@ -201,7 +97,7 @@ selected_assets = st.sidebar.multiselect(
 )
 
 # Pesos personalizados
-st.sidebar.markdown('<div class="sidebar-header">Alocação de Pesos</div>', unsafe_allow_html=True)
+st.sidebar.subheader("⚖️ Alocação de Pesos")
 weights = {}
 if selected_assets:
     st.sidebar.write("Defina os pesos (%) para cada ativo:")
@@ -212,10 +108,10 @@ if selected_assets:
         total_weight += weight
     
     if abs(total_weight - 100) > 1:
-        st.sidebar.warning(f"Pesos totalizam {total_weight}% - ajuste para 100%")
+        st.sidebar.warning(f"⚠️ Pesos totalizam {total_weight}% - ajuste para 100%")
 
 # Filtro de período
-st.sidebar.markdown('<div class="sidebar-header">Período de Análise</div>', unsafe_allow_html=True)
+st.sidebar.subheader("📅 Período de Análise")
 min_date = returns.index.min().date()
 max_date = returns.index.max().date()
 
@@ -226,12 +122,12 @@ with col2:
     end_date = st.date_input("Fim", value=max_date, min_value=min_date, max_value=max_date)
 
 # Parâmetros de risco
-st.sidebar.markdown('<div class="sidebar-header">Parâmetros de Risco</div>', unsafe_allow_html=True)
+st.sidebar.subheader("🎯 Parâmetros de Risco")
 risk_free_rate = st.sidebar.slider("Taxa Livre de Risco (% a.a):", 0.0, 20.0, 11.75, 0.1) / 100
 confidence_level = st.sidebar.slider("Confiança VaR:", 0.90, 0.99, 0.95, 0.01)
 
 # Configuração de Simulações
-st.sidebar.markdown('<div class="sidebar-header">Configuração de Simulações</div>', unsafe_allow_html=True)
+st.sidebar.subheader("🎲 Configuração de Simulações")
 num_simulations = st.sidebar.selectbox("Nº de Simulações:", [500, 1000, 2000, 5000], index=1)
 time_horizon = st.sidebar.selectbox("Horizonte (dias):", [30, 90, 180, 252, 504], index=3)
 initial_investment = st.sidebar.number_input("Investimento Inicial (R$):", 1000, 1000000, 10000, 1000)
@@ -256,15 +152,15 @@ else:
 
 # Layout principal com abas
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Dashboard", 
-    "Análise de Risco", 
-    "Simulações Avançadas",
-    "Análise Técnica", 
-    "Relatório"
+    "🏠 Dashboard", 
+    "📊 Análise de Risco", 
+    "🎲 Simulações Avançadas",
+    "📈 Análise Técnica", 
+    "📋 Relatório"
 ])
 
 with tab1:
-    st.markdown('<div class="section-header">Visão Geral do Portfólio</div>', unsafe_allow_html=True)
+    st.header("📈 Visão Geral do Portfólio")
     
     # Métricas rápidas
     col1, col2, col3, col4 = st.columns(4)
@@ -298,15 +194,7 @@ with tab1:
                 name=asset,
                 line=dict(width=2)
             ))
-        fig_prices.update_layout(
-            height=400, 
-            showlegend=True,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond'),
-            xaxis=dict(gridcolor='#333'),
-            yaxis=dict(gridcolor='#333')
-        )
+        fig_prices.update_layout(height=400, showlegend=True)
         st.plotly_chart(fig_prices, use_container_width=True)
     
     with col2:
@@ -320,34 +208,21 @@ with tab1:
                 name=asset,
                 line=dict(width=2)
             ))
-        fig_cumulative.update_layout(
-            height=400, 
-            showlegend=True,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond'),
-            xaxis=dict(gridcolor='#333'),
-            yaxis=dict(gridcolor='#333')
-        )
+        fig_cumulative.update_layout(height=400, showlegend=True)
         st.plotly_chart(fig_cumulative, use_container_width=True)
     
     # Composição do portfólio
-    st.subheader("Composição do Portfólio")
+    st.subheader("📊 Composição do Portfólio")
     if weights:
         fig_pie = px.pie(
             values=list(normalized_weights.values()),
             names=list(normalized_weights.keys()),
             title="Alocação do Portfólio"
         )
-        fig_pie.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond')
-        )
         st.plotly_chart(fig_pie, use_container_width=True)
 
 with tab2:
-    st.markdown('<div class="section-header">Análise Detalhada de Risco</div>', unsafe_allow_html=True)
+    st.header("📊 Análise Detalhada de Risco")
     
     col1, col2 = st.columns(2)
     
@@ -401,16 +276,11 @@ with tab2:
             color_continuous_scale='RdBu_r',
             title='Correlação entre Ativos'
         )
-        fig_corr.update_layout(
-            height=500,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond')
-        )
+        fig_corr.update_layout(height=500)
         st.plotly_chart(fig_corr, use_container_width=True)
     
-    # Análise de Drawdown - CORRIGIDA (vermelho trocado por amarelo)
-    st.subheader("Análise de Drawdown")
+    # Análise de Drawdown
+    st.subheader("📉 Análise de Drawdown")
     cumulative_portfolio = (1 + portfolio_returns).cumprod()
     rolling_max = cumulative_portfolio.expanding().max()
     drawdown_series = (cumulative_portfolio - rolling_max) / rolling_max
@@ -420,37 +290,28 @@ with tab2:
         x=drawdown_series.index,
         y=drawdown_series.values,
         fill='tozeroy',
-        fillcolor='rgba(212, 175, 55, 0.3)',  # Amarelo dourado com transparência
-        line=dict(color='#d4af37', width=2),  # Amarelo dourado
+        fillcolor='rgba(255,0,0,0.3)',
+        line=dict(color='red', width=1),
         name='Drawdown'
     ))
     fig_dd.update_layout(
         height=300,
         title="Drawdown do Portfólio",
-        yaxis_tickformat='.1%',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#f0f2f6', family='EB Garamond'),
-        xaxis=dict(gridcolor='#333'),
-        yaxis=dict(gridcolor='#333')
+        yaxis_tickformat='.1%'
     )
     st.plotly_chart(fig_dd, use_container_width=True)
 
 with tab3:
-    st.markdown('<div class="section-header">Simulações Avançadas de Monte Carlo</div>', unsafe_allow_html=True)
+    st.header("🎲 Simulações Avançadas de Monte Carlo")
     
-    st.markdown("""
-    <div class="simulation-card">
-    <h3>Algoritmos Disponíveis</h3>
-    <ul>
-    <li><b>Monte Carlo Clássico</b>: Simulação básica com distribuição normal</li>
-    <li><b>Bootstrapping</b>: Reamostragem dos dados históricos</li>
-    <li><b>Merton Jump</b>: Inclui saltos para eventos extremos</li>
-    <li><b>GARCH</b>: Volatilidade variável no tempo</li>
-    <li><b>Cópula Gaussiana</b>: Modelagem de dependência multivariada</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("""
+    **Algoritmos Disponíveis:**
+    - 🎲 **Monte Carlo Clássico**: Simulação básica com distribuição normal
+    - 🔄 **Bootstrapping**: Reamostragem dos dados históricos
+    - 🌊 **Merton Jump**: Inclui saltos para eventos extremos
+    - 📈 **GARCH**: Volatilidade variável no tempo
+    - 🎯 **Cópula Gaussiana**: Modelagem de dependência multivariada
+    """)
     
     # Seleção do algoritmo
     algorithm = st.selectbox(
@@ -464,7 +325,7 @@ with tab3:
         ]
     )
     
-    if st.button("Executar Simulação", type="primary"):
+    if st.button("🚀 Executar Simulação", type="primary"):
         with st.spinner(f"Executando {algorithm}..."):
             try:
                 # Importar e executar simulação baseada na seleção
@@ -551,7 +412,7 @@ with tab3:
                     x=list(range(len(median_path))),
                     y=median_path,
                     mode='lines',
-                    line=dict(width=3, color='#d4af37'),  # Amarelo dourado
+                    line=dict(width=3, color='red'),
                     name='Mediana'
                 ))
                 
@@ -559,12 +420,7 @@ with tab3:
                     title=f"{algorithm} - {num_simulations} Simulações",
                     xaxis_title="Dias",
                     yaxis_title="Valor do Portfólio (R$)",
-                    height=400,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='#f0f2f6', family='EB Garamond'),
-                    xaxis=dict(gridcolor='#333'),
-                    yaxis=dict(gridcolor='#333')
+                    height=400
                 )
                 
                 st.plotly_chart(fig_sim, use_container_width=True)
@@ -580,14 +436,13 @@ with tab3:
                     x=final_values,
                     nbinsx=50,
                     name='Distribuição Final',
-                    opacity=0.7,
-                    marker_color='#d4af37'  # Amarelo dourado
+                    opacity=0.7
                 ))
                 
                 fig_dist.add_vline(
                     x=np.mean(final_values), 
                     line_dash="dash", 
-                    line_color="#d4af37",
+                    line_color="red",
                     annotation_text="Média"
                 )
                 
@@ -595,22 +450,17 @@ with tab3:
                     title="Distribuição dos Valores Finais",
                     xaxis_title="Valor Final (R$)",
                     yaxis_title="Frequência",
-                    height=300,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='#f0f2f6', family='EB Garamond'),
-                    xaxis=dict(gridcolor='#333'),
-                    yaxis=dict(gridcolor='#333')
+                    height=300
                 )
                 
                 st.plotly_chart(fig_dist, use_container_width=True)
                 
             except Exception as e:
-                st.error(f"Erro na simulação: {e}")
-                st.info("Tente instalar as dependências: `pip install arch statsmodels`")
+                st.error(f"❌ Erro na simulação: {e}")
+                st.info("💡 Tente instalar as dependências: `pip install arch statsmodels`")
 
 with tab4:
-    st.markdown('<div class="section-header">Análise Técnica Avançada</div>', unsafe_allow_html=True)
+    st.header("📈 Análise Técnica Avançada")
     
     col1, col2 = st.columns(2)
     
@@ -632,12 +482,7 @@ with tab4:
         fig_vol.update_layout(
             height=400,
             title=f"Volatilidade Móvel ({vol_window} dias)",
-            yaxis_tickformat='.1%',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond'),
-            xaxis=dict(gridcolor='#333'),
-            yaxis=dict(gridcolor='#333')
+            yaxis_tickformat='.1%'
         )
         st.plotly_chart(fig_vol, use_container_width=True)
     
@@ -654,7 +499,7 @@ with tab4:
         )
         
         fig_scatter.update_traces(
-            marker=dict(size=20, opacity=0.7, color='#d4af37'),
+            marker=dict(size=20, opacity=0.7),
             textposition='top center'
         )
         
@@ -663,12 +508,7 @@ with tab4:
             xaxis_title="Volatilidade Anual",
             yaxis_title="Retorno Anual",
             xaxis_tickformat='.1%',
-            yaxis_tickformat='.1%',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#f0f2f6', family='EB Garamond'),
-            xaxis=dict(gridcolor='#333'),
-            yaxis=dict(gridcolor='#333')
+            yaxis_tickformat='.1%'
         )
         
         # Adicionar linha do Sharpe
@@ -678,24 +518,24 @@ with tab4:
             x=np.linspace(0, max_vol, 100),
             y=sharpe_line,
             mode='lines',
-            line=dict(dash='dash', color='#d4af37'),
+            line=dict(dash='dash', color='gray'),
             name='Linha Sharpe'
         ))
         
         st.plotly_chart(fig_scatter, use_container_width=True)
 
 with tab5:
-    st.markdown('<div class="section-header">Relatório Executivo</div>', unsafe_allow_html=True)
+    st.header("📋 Relatório Executivo")
     
     # Gerar relatório automático
-    st.subheader("Resumo do Portfólio")
+    st.subheader("📊 Resumo do Portfólio")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
         <div class='metric-card'>
-        <h3>Performance</h3>
+        <h3>🎯 Performance</h3>
         <ul>
         <li><b>Retorno Total:</b> {:.2%}</li>
         <li><b>Retorno Anualizado:</b> {:.2%}</li>
@@ -713,7 +553,7 @@ with tab5:
     with col2:
         st.markdown("""
         <div class='metric-card'>
-        <h3>Medidas de Risco</h3>
+        <h3>📉 Medidas de Risco</h3>
         <ul>
         <li><b>Volatilidade Anual:</b> {:.2%}</li>
         <li><b>Max Drawdown:</b> {:.2%}</li>
@@ -729,20 +569,20 @@ with tab5:
         ), unsafe_allow_html=True)
     
     # Recomendações
-    st.subheader("Recomendações")
+    st.subheader("💡 Recomendações")
     
     if sharpe > 1.0:
-        st.success("**Portfólio Eficiente** - Sharpe Ratio acima de 1.0 indica boa relação risco-retorno")
+        st.success("**✅ Portfólio Eficiente** - Sharpe Ratio acima de 1.0 indica boa relação risco-retorno")
     else:
-        st.warning("**Oportunidade de Melhoria** - Considere otimizar a alocação para melhorar o Sharpe Ratio")
+        st.warning("**⚠️ Oportunidade de Melhoria** - Considere otimizar a alocação para melhorar o Sharpe Ratio")
     
     if annual_vol > 0.20:
-        st.warning("**Alta Volatilidade** - Portfólio apresenta risco elevado, considere diversificação")
+        st.warning("**📈 Alta Volatilidade** - Portfólio apresenta risco elevado, considere diversificação")
     else:
-        st.success("**Volatilidade Controlada** - Nível de risco dentro de parâmetros conservadores")
+        st.success("**✅ Volatilidade Controlada** - Nível de risco dentro de parâmetros conservadores")
     
     # Botão para exportar relatório
-    if st.button("Exportar Relatório PDF"):
+    if st.button("📥 Exportar Relatório PDF"):
         st.info("""
         **Recurso em Desenvolvimento**
         
@@ -757,8 +597,8 @@ with tab5:
 st.markdown("---")
 st.markdown(
     """
-    <div style='text-align: center; color: #888; font-family: "EB Garamond", serif;'>
-    <b>Quantum Risk Analytics</b> | 
+    <div style='text-align: center'>
+    <b>🧠 Quantum Risk Analytics</b> | 
     Desenvolvido com Python + Streamlit | 
     Dados: Banco Central do Brasil
     </div>
